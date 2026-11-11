@@ -47,9 +47,11 @@ export function decodeChasis(input: string): Vehiculo | null {
   let motores = s?.motores || [];
   if (s?.sub && s.sub[bm[3]]) { familia = s.sub[bm[3]].familia; slug = s.sub[bm[3]].slug; motores = s.sub[bm[3]].motores; }
   const anio = /^[0-9]{6}$/.test(bm) && /[A-Z0-9]/.test(letraAnio) && ANIOS[letraAnio] && wmi !== "WDB" ? ANIOS[letraAnio] : undefined;
+  // Series que el catálogo nombra en el texto de aplicación ("W907", "W906", "ACTROS 963"): se usan para poner primero lo que las nombra.
+  const modeloNum = ["906", "907", "910", "963"].includes(fam3) ? [fam3] : [];
   return {
     entrada: input, chasis: v, serie: /^[0-9]{6}$/.test(bm) ? `${bm.slice(0, 3)}.${bm.slice(3)}` : undefined, serieFam: fam3,
-    familia, slug, origen, anioModelo: anio, motoresProbables: motores, confirmado: s?.confirmado || "",
+    familia, slug, origen, anioModelo: anio, motoresProbables: motores, confirmado: s?.confirmado || "", modeloNum,
     nota: wmi === "WD4" ? "Chasis con formato de EE.UU.: no trae la serie Mercedes; se identifica por modelo." : !s ? "Serie no registrada en la tabla: el buscador muestra la marca, pero conviene elegir el modelo a mano." : undefined,
   };
 }
