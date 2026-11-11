@@ -20,6 +20,7 @@ export default function Header() {
           <SearchBox />
         </div>
         <nav className="flex items-center gap-4 text-sm font-semibold text-navy">
+          <Link href="/vehiculo" className="hidden sm:inline hover:text-red">Por vehículo</Link>
           <Link href="/modelos" className="hidden sm:inline hover:text-red">Modelos</Link>
           <Link href="/categorias" className="hidden sm:inline hover:text-red">Categorías</Link>
           <Link href="/sucursales" className="hidden sm:inline hover:text-red">Sucursales</Link>

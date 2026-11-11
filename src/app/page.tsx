@@ -25,6 +25,7 @@ export default function Home() {
                 <SearchBox big />
               </Suspense>
             </div>
+            <p className="mt-3 text-sm"><Link href="/vehiculo" className="inline-flex items-center gap-2 font-semibold text-white bg-white/10 border border-white/30 rounded-md px-3 py-2 hover:bg-white hover:text-navy">¿No sabe el número de parte? Buscar por vehículo con el chasis ›</Link></p>
             <div className="mt-4 flex flex-wrap gap-2">
               {modelosTop.slice(0, 8).map((m) => (
                 <Link key={m.slug} href={`/modelo/${m.slug}`} className="chip !bg-transparent !border-white/40 !text-white hover:!bg-white hover:!text-navy">{m.nombre}</Link>

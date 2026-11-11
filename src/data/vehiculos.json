@@ -1,0 +1,39 @@
+{
+  "series": {
+    "958": {"familia": "Atego (Brasil, 2012–2023)", "slug": "atego", "origen": "Brasil", "motores": ["OM 926", "OM 924"], "confirmado": "958.154 (Atego 1729, 2023) · 958.170 (Atego, 2021)"},
+    "951": {"familia": "Accelo / Atego nueva generación (Brasil, 2023→)", "slug": "accelo-atron", "origen": "Brasil", "motores": ["OM 924", "OM 925"], "confirmado": "951.104 (Accelo 1016, 2024–2026) · 951.501 (Atego 1726, 2026)", "sub": {"1": {"familia": "Accelo 1016 (Brasil, 2023→)", "slug": "accelo-atron", "motores": ["OM 924"]}, "5": {"familia": "Atego nueva generación (Brasil, 2026)", "slug": "atego", "motores": ["OM 925", "OM 926"]}}},
+    "968": {"familia": "New Axor (Brasil)", "slug": "axor", "origen": "Brasil", "motores": ["OM 460"], "confirmado": "968.475 (New Axor 2545, 2026)"},
+    "634": {"familia": "O 500 RS / RSD (bus, Brasil)", "slug": "o-500", "origen": "Brasil", "motores": ["OM 460", "OM 457"], "confirmado": "634.016 (O 500 RS 1945, 2024–2026) · 634.074 (O 500 RSD, 2026)", "sub": {"0": {"familia": "O 500 RS 1945 (bus 2 ejes, Brasil)", "slug": "o-500", "motores": ["OM 460", "OM 457"]}}},
+    "384": {"familia": "OF 1721 / 1724 (bus motor delantero, Brasil)", "slug": "of", "origen": "Brasil", "motores": ["OM 926", "OM 924"], "confirmado": "384.065 y 384.076 (OF 1724, 2024–2026)"},
+    "979": {"familia": "LO 916 (minibús, Brasil)", "slug": "915-916", "origen": "Brasil", "motores": ["OM 924"], "confirmado": "979.277 (LO 916, 2015)"},
+    "963": {"familia": "Actros nueva generación (Alemania)", "slug": "actros", "origen": "Alemania", "motores": ["OM 471", "OM 473", "OM 470"], "confirmado": "963.424 (New Actros 2645 LS, 2024–2025) · 963.403 (Actros 1851, 2023) · 963.020 (New Actros 2545, 2024)"},
+    "930": {"familia": "Actros MP2 / MP3 (Alemania)", "slug": "actros", "origen": "Alemania", "motores": ["OM 541", "OM 501", "OM 502"], "confirmado": ""},
+    "932": {"familia": "Actros MP2 / MP3 pesado (Alemania)", "slug": "actros", "origen": "Alemania", "motores": ["OM 541", "OM 501", "OM 502"], "confirmado": "932.315 (Actros 4144K, 2009)"},
+    "933": {"familia": "Actros MP2 / MP3 (Alemania)", "slug": "actros", "origen": "Alemania", "motores": ["OM 541", "OM 501"], "confirmado": ""},
+    "934": {"familia": "Actros MP2 / MP3 (Alemania)", "slug": "actros", "origen": "Alemania", "motores": ["OM 541", "OM 501"], "confirmado": ""},
+    "964": {"familia": "Arocs (Alemania)", "slug": "actros", "origen": "Alemania", "motores": ["OM 471", "OM 473"], "confirmado": ""},
+    "940": {"familia": "Axor (Alemania)", "slug": "axor", "origen": "Alemania", "motores": ["OM 457", "OM 906"], "confirmado": ""},
+    "944": {"familia": "Axor (Alemania)", "slug": "axor", "origen": "Alemania", "motores": ["OM 457", "OM 906"], "confirmado": ""},
+    "906": {"familia": "Sprinter 2.ª generación (2006–2018)", "slug": "sprinter", "origen": "Alemania / Argentina", "motores": ["OM 651", "OM 646"], "confirmado": ""},
+    "907": {"familia": "Sprinter 3.ª generación (2018→)", "slug": "sprinter", "origen": "Alemania / Argentina", "motores": ["OM 651", "OM 654"], "confirmado": ""},
+    "910": {"familia": "Sprinter 3.ª generación tracción delantera", "slug": "sprinter", "origen": "Alemania", "motores": ["OM 654"], "confirmado": ""},
+    "901": {"familia": "Sprinter 1.ª generación (1995–2006)", "slug": "sprinter", "origen": "Alemania / Argentina", "motores": ["OM 611", "OM 612", "OM 602"], "confirmado": ""},
+    "902": {"familia": "Sprinter 1.ª generación (1995–2006)", "slug": "sprinter", "origen": "Alemania / Argentina", "motores": ["OM 611", "OM 612", "OM 602"], "confirmado": ""},
+    "903": {"familia": "Sprinter 1.ª generación (1995–2006)", "slug": "sprinter", "origen": "Alemania / Argentina", "motores": ["OM 611", "OM 612", "OM 602"], "confirmado": ""},
+    "904": {"familia": "Sprinter 1.ª generación (1995–2006)", "slug": "sprinter", "origen": "Alemania / Argentina", "motores": ["OM 611", "OM 612", "OM 602"], "confirmado": ""},
+    "639": {"familia": "Vito / Viano (2003–2014)", "slug": "vito", "origen": "Alemania / España", "motores": ["OM 651", "OM 646"], "confirmado": ""},
+    "447": {"familia": "Vito / Clase V (2014→)", "slug": "vito", "origen": "Alemania / España", "motores": ["OM 651", "OM 654"], "confirmado": ""},
+    "670": {"familia": "Vario", "slug": "", "origen": "Alemania", "motores": ["OM 904"], "confirmado": ""},
+    "668": {"familia": "Vario", "slug": "", "origen": "Alemania", "motores": ["OM 904"], "confirmado": ""}
+  },
+  "motores": {
+    "457": "OM 457 LA · 12 L · 6 cilindros", "460": "OM 460 LA · 12,8 L · 6 cilindros", "471": "OM 471 · 12,8 L · 6 cilindros", "473": "OM 473 · 15,6 L", "470": "OM 470 · 10,7 L",
+    "541": "OM 541 LA · 12 L · V6", "501": "OM 501 LA · 12 L · V6", "502": "OM 502 LA · 16 L · V8",
+    "904": "OM 904 LA · 4,25 L · 4 cilindros", "900": "OM 904 LA (serie 900.9xx, Vario) · 4,25 L", "906": "OM 906 LA · 6,4 L · 6 cilindros",
+    "924": "OM 924 LA · 4,8 L · 4 cilindros", "925": "Motor serie 925 (Atego nueva generación, Brasil 2026)", "926": "OM 926 LA · 7,2 L · 6 cilindros", "936": "OM 936 · 7,7 L",
+    "651": "OM 651 · 2,1 L · 4 cilindros", "654": "OM 654 · 2,0 L · 4 cilindros", "611": "OM 611 · 2,2 L", "612": "OM 612 · 2,7 L · 5 cilindros", "646": "OM 646 · 2,1 L", "602": "OM 602 · 2,9 L · 5 cilindros",
+    "447": "OM 447 · 12 L · 6 cilindros", "366": "OM 366 · 6 L · 6 cilindros", "364": "OM 364 · 4 L · 4 cilindros", "352": "OM 352 · 5,7 L", "355": "OM 355 · 11,6 L", "656": "OM 656 · 2,9 L · 6 cilindros"
+  },
+  "wmi": {"9BM": "Brasil (Mercedes-Benz do Brasil)", "WDB": "Alemania (Daimler)", "W1T": "Alemania (Mercedes-Benz Trucks)", "W1V": "Alemania (Mercedes-Benz Vans)", "WD3": "Alemania (vans)", "WD4": "Alemania (vans, especificación EE.UU.)", "WDF": "Alemania (vans)", "8AC": "Argentina (Sprinter)", "WEB": "Alemania (EvoBus)", "WDC": "Alemania (SUV)", "WMX": "Alemania"},
+  "anios": {"A": 2010, "B": 2011, "C": 2012, "D": 2013, "E": 2014, "F": 2015, "G": 2016, "H": 2017, "J": 2018, "K": 2019, "L": 2020, "M": 2021, "N": 2022, "P": 2023, "R": 2024, "S": 2025, "T": 2026, "V": 2027, "W": 2028, "X": 2029, "Y": 2030, "1": 2001, "2": 2002, "3": 2003, "4": 2004, "5": 2005, "6": 2006, "7": 2007, "8": 2008, "9": 2009}
+}
