@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getCategoria, productsByCat, CATEGORIAS } from "@/lib/catalog";
 import Listing from "@/components/Listing";
 
-type Props = { params: Promise<{ cat: string }>; searchParams: Promise<{ p?: string }> };
+type Props = { params: Promise<{ cat: string }>; searchParams: Promise<{ p?: string; orden?: string; stock?: string }> };
 export function generateStaticParams() { return CATEGORIAS.map((c) => ({ cat: c.slug })); }
 export async function generateMetadata({ params }: Props) {
   const c = getCategoria((await params).cat);
@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: Props) {
 export default async function CatPage({ params, searchParams }: Props) {
   const c = getCategoria((await params).cat);
   if (!c) notFound();
-  const page = Number((await searchParams).p || 1);
+  const sp = await searchParams; const page = Number(sp.p || 1);
   const subs = c.sub.filter((s) => s.nombre);
   return (
     <>
@@ -21,7 +21,7 @@ export default async function CatPage({ params, searchParams }: Props) {
           {subs.map((s) => <Link key={s.slug} href={`/categoria/${c.slug}/${s.slug}`} className="chip">{s.nombre} <span className="text-muted">· {s.n}</span></Link>)}
         </div>
       )}
-      <Listing eyebrow="Categoría" title={c.nombre} items={productsByCat(c.slug)} base={`/categoria/${c.slug}`} page={page} />
+      <Listing eyebrow="Categoría" title={c.nombre} items={productsByCat(c.slug)} base={`/categoria/${c.slug}`} page={page} orden={sp.orden} stock={sp.stock} />
     </>
   );
 }

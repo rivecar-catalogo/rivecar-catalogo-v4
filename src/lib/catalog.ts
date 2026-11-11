@@ -73,6 +73,25 @@ export const VENTAS_FECHA = "27-10-2026";
 export const VERSION = "v4.3.1 · 11-11-2026";
 export const SHOW_STOCK = process.env.NEXT_PUBLIC_SHOW_STOCK !== "0";
 export const stockTotal = (p: Product) => Object.values(p.stk || {}).reduce((a, b) => a + b, 0);
+/** Órdenes disponibles en todas las listas (por vehículo, categorías, modelos, buscador). */
+export const ORDENES: [string, string][] = [["venta", "Más vendidos primero"], ["precio-desc", "Mayor precio"], ["precio-asc", "Menor precio"], ["stock", "Más disponibles"], ["nombre", "Nombre A–Z"], ["codigo", "Código Rivecar"]];
+export const ordenLabel = (k?: string) => ORDENES.find((o) => o[0] === k)?.[1] || ORDENES[0][1];
+/** Reordena una lista ya ordenada por venta. "venta" o vacío la deja como viene; los sin precio van al final en los órdenes por precio. */
+export function ordenar(items: Product[], orden?: string): Product[] {
+  if (!orden || orden === "venta") return items;
+  const out = items.map((p, i) => ({ p, i }));
+  const pr = (p: Product) => p.precio ?? -1;
+  const cmp: Record<string, (a: Product, b: Product) => number> = {
+    "precio-desc": (a, b) => pr(b) - pr(a),
+    "precio-asc": (a, b) => (pr(a) < 0 ? 1 : 0) - (pr(b) < 0 ? 1 : 0) || pr(a) - pr(b),
+    stock: (a, b) => stockTotal(b) - stockTotal(a),
+    nombre: (a, b) => a.descripcion.localeCompare(b.descripcion, "es"),
+    codigo: (a, b) => a.codigo.localeCompare(b.codigo, "es", { numeric: true }),
+  };
+  const c = cmp[orden]; if (!c) return items;
+  out.sort((x, y) => c(x.p, y.p) || x.i - y.i);
+  return out.map((x) => x.p);
+}
 export const SUCURSALES = [
   { nombre: "Maipú · Casa Matriz", direccion: "Primo de Rivera #733 C, Américo Vespucio", ciudad: "Maipú, Santiago", telefono: "(56-2) 2323 2139" },
   { nombre: "Talagante", direccion: "21 de Mayo #1430", ciudad: "Talagante, Santiago", telefono: "(56-2) 2838 2193 / 2815 5641" },

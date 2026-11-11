@@ -10,6 +10,22 @@ type Row = { c: string; d: string; m: string; b: string; f: string; r: string; i
 const SHOW_STOCK = process.env.NEXT_PUBLIC_SHOW_STOCK !== "0";
 const SHOW_PRICES = process.env.NEXT_PUBLIC_SHOW_PRICES !== "0";
 const clp = (n: number) => "$" + n.toLocaleString("es-CL");
+const ORDENES: [string, string][] = [["venta", "Mejor coincidencia"], ["precio-desc", "Mayor precio"], ["precio-asc", "Menor precio"], ["stock", "Más disponibles"], ["nombre", "Nombre A–Z"], ["codigo", "Código Rivecar"]];
+function ordenarRows(rows: Row[], orden: string): Row[] {
+  if (orden === "venta") return rows;
+  const out = rows.map((r, i) => ({ r, i }));
+  const pr = (r: Row) => r.p || -1;
+  const cmp: Record<string, (a: Row, b: Row) => number> = {
+    "precio-desc": (a, b) => pr(b) - pr(a),
+    "precio-asc": (a, b) => (pr(a) < 0 ? 1 : 0) - (pr(b) < 0 ? 1 : 0) || pr(a) - pr(b),
+    stock: (a, b) => (b.k || 0) - (a.k || 0),
+    nombre: (a, b) => a.d.localeCompare(b.d, "es"),
+    codigo: (a, b) => a.c.localeCompare(b.c, "es", { numeric: true }),
+  };
+  const c = cmp[orden]; if (!c) return rows;
+  out.sort((x, y) => c(x.r, y.r) || x.i - y.i);
+  return out.map((x) => x.r);
+}
 
 const norm = (s: string) =>
   (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -48,6 +64,8 @@ export default function SearchClient() {
   const [data, setData] = useState<typeof cache>(null);
   const [fam, setFam] = useState<string>("");
   const [shown, setShown] = useState(48);
+  const [orden, setOrden] = useState("venta");
+  const [soloStock, setSoloStock] = useState(false);
   const tracked = useRef("");
 
   useEffect(() => {
@@ -110,7 +128,8 @@ export default function SearchClient() {
     results.forEach((r) => c.set(r.f, (c.get(r.f) || 0) + 1));
     return [...c.entries()].sort((a, b) => b[1] - a[1]);
   }, [results]);
-  const filtered = fam ? results.filter((r) => r.f === fam) : results;
+  const filtered = ordenarRows((fam ? results.filter((r) => r.f === fam) : results).filter((r) => !soloStock || r.s > 0), orden);
+  const conStock = results.filter((r) => r.s > 0).length;
   const cq = refCode(q);
   const matchedRef = (r: Row): { ref: string; hit: boolean; extra: number } => {
     const refs = r.r ? r.r.split(" ") : [];
@@ -140,6 +159,15 @@ export default function SearchClient() {
         </div>
       ) : (
         <>
+          <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
+            <label className="text-muted flex items-center gap-1">Ordenar
+              <select value={orden} onChange={(e) => setOrden(e.target.value)} className="border border-line rounded-md px-2 py-1.5 text-sm text-navy bg-white">
+                {ORDENES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+              </select>
+            </label>
+            {SHOW_STOCK && <label className="text-navy flex items-center gap-1"><input type="checkbox" checked={soloStock} onChange={(e) => setSoloStock(e.target.checked)} /> Solo con stock</label>}
+            <span className="text-muted">{filtered.length.toLocaleString("es-CL")} mostrados{SHOW_STOCK ? ` · ${conStock.toLocaleString("es-CL")} con stock` : ""}</span>
+          </div>
           {fams.length > 1 && (
             <div className="flex flex-wrap gap-2 mb-5">
               <button className={`chip ${!fam ? "on" : ""}`} onClick={() => setFam("")}>Todas · {results.length}</button>
