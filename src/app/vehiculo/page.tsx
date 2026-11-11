@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import ProductCard from "@/components/ProductCard";
-import { MODELOS } from "@/lib/catalog";
-import { decodeChasis, decodeMotor, vehiculoPorModelo, vehiculoPorPatente, productosParaVehiculo, PATENTES_TOTAL, EJES, FRENOS, type Vehiculo } from "@/lib/vehiculo";
+import { MODELOS, SHOW_STOCK } from "@/lib/catalog";
+import { decodeChasis, decodeMotor, vehiculoPorModelo, vehiculoPorPatente, productosParaVehiculo, PATENTES_TOTAL, EJES, FRENOS, ORDENES, type Vehiculo } from "@/lib/vehiculo";
 
 export const metadata: Metadata = { title: "Buscar por vehículo", description: "Escriba el número de chasis o elija el modelo: el catálogo muestra solo lo que aplica." };
 
@@ -17,7 +17,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
   const motorIn = one(sp.motor).trim();
   const modelo = one(sp.modelo);
   const anio = parseInt(one(sp.anio)) || undefined;
-  const f = { cat: one(sp.cat) || undefined, eje: one(sp.eje) || undefined, freno: one(sp.freno) || undefined, q: one(sp.q) || undefined };
+  const f = { cat: one(sp.cat) || undefined, eje: one(sp.eje) || undefined, freno: one(sp.freno) || undefined, q: one(sp.q) || undefined, orden: one(sp.orden) || undefined, stock: one(sp.stock) || undefined };
   const page = parseInt(one(sp.p)) || 1;
 
   let v: Vehiculo | null = null;
@@ -34,7 +34,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
   const slice = res ? res.items.slice((cur - 1) * PAGE, cur * PAGE) : [];
   const keep = (over: Record<string, string | undefined>) => {
     const q = new URLSearchParams();
-    const all: Record<string, string | undefined> = { chasis: chasis || undefined, patente: patente || undefined, motor: motorIn || undefined, modelo: modelo || undefined, anio: anio ? String(anio) : undefined, cat: f.cat, eje: f.eje, freno: f.freno, q: f.q, ...over };
+    const all: Record<string, string | undefined> = { chasis: chasis || undefined, patente: patente || undefined, motor: motorIn || undefined, modelo: modelo || undefined, anio: anio ? String(anio) : undefined, cat: f.cat, eje: f.eje, freno: f.freno, q: f.q, orden: f.orden, stock: f.stock, ...over };
     Object.entries(all).forEach(([k, val]) => { if (val) q.set(k, val); });
     return `/vehiculo?${q.toString()}`;
   };
@@ -101,10 +101,16 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
           <section className="mt-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-xl font-extrabold text-navy">{res.total.toLocaleString("es-CL")} productos para este vehículo{res.porMotor ? <span className="text-sm text-muted font-normal"> · {res.porMotor} nombran su motor y van primero</span> : null}</h2>
-              <form action="/vehiculo" method="get" className="flex gap-2">
-                {chasis && <input type="hidden" name="chasis" value={chasis} />}{patente && <input type="hidden" name="patente" value={patente} />}{motorIn && <input type="hidden" name="motor" value={motorIn} />}{modelo && <input type="hidden" name="modelo" value={modelo} />}{anio && <input type="hidden" name="anio" value={anio} />}{f.cat && <input type="hidden" name="cat" value={f.cat} />}
+              <form action="/vehiculo" method="get" className="flex flex-wrap gap-2 items-center">
+                {chasis && <input type="hidden" name="chasis" value={chasis} />}{patente && <input type="hidden" name="patente" value={patente} />}{motorIn && <input type="hidden" name="motor" value={motorIn} />}{modelo && <input type="hidden" name="modelo" value={modelo} />}{anio && <input type="hidden" name="anio" value={anio} />}{f.cat && <input type="hidden" name="cat" value={f.cat} />}{f.eje && <input type="hidden" name="eje" value={f.eje} />}{f.freno && <input type="hidden" name="freno" value={f.freno} />}
                 <input name="q" defaultValue={f.q} placeholder="Filtrar: pastilla, filtro, correa…" className="border border-line rounded-md px-3 py-1.5 text-sm" />
-                <button className="btn-ghost text-sm" type="submit">Filtrar</button>
+                <label className="text-sm text-muted flex items-center gap-1">Ordenar
+                  <select name="orden" defaultValue={f.orden || "venta"} className="border border-line rounded-md px-2 py-1.5 text-sm text-navy">
+                    {ORDENES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                  </select>
+                </label>
+                {SHOW_STOCK && <label className="text-sm text-navy flex items-center gap-1"><input type="checkbox" name="stock" value="1" defaultChecked={f.stock === "1"} /> Solo con stock</label>}
+                <button className="btn-ghost text-sm" type="submit">Aplicar</button>
               </form>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -119,7 +125,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
                 {FRENOS.map(([k, label]) => <Link key={k} href={keep({ freno: f.freno === k ? undefined : k })} className={`chip ${f.freno === k ? "on" : ""}`}>{label}</Link>)}
               </div>
             )}
-            <p className="text-sm text-muted mt-3">{res.items.length.toLocaleString("es-CL")} resultados{f.cat ? ` en ${f.cat.toLowerCase()}` : ""}{f.q ? ` con «${f.q}»` : ""}.</p>
+            <p className="text-sm text-muted mt-3">{res.items.length.toLocaleString("es-CL")} resultados{f.cat ? ` en ${f.cat.toLowerCase()}` : ""}{f.q ? ` con «${f.q}»` : ""}{f.stock === "1" ? " con stock" : SHOW_STOCK ? ` · ${res.conStock.toLocaleString("es-CL")} con stock` : ""}{f.orden && f.orden !== "venta" ? ` · orden: ${(ORDENES.find((o) => o[0] === f.orden)?.[1] || "").toLowerCase()}` : " · los más vendidos primero"}.</p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
               {slice.map((p) => <ProductCard key={p.codigo} p={p} />)}
             </div>

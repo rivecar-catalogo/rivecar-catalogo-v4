@@ -1,6 +1,6 @@
 import data from "@/data/vehiculos.json";
 import patentes from "@/data/patentes.json";
-import { PRODUCTS, MODELOS, popRank, type Product } from "@/lib/catalog";
+import { PRODUCTS, MODELOS, popRank, stockTotal, type Product } from "@/lib/catalog";
 
 type Serie = { familia: string; slug: string; origen: string; motores: string[]; confirmado: string; sub?: Record<string, { familia: string; slug: string; motores: string[] }> };
 const SERIES = data.series as Record<string, Serie>;
@@ -91,10 +91,11 @@ export function vehiculoPorModelo(slug: string, anio?: number): Vehiculo | null 
 export const EJES = [["del", "Eje delantero", /\b(DEL|DELANT|DELANTERO|DELANTERA|DIRECCION)\b/i], ["tras", "Eje trasero", /\b(TRAS|TRASERO|TRASERA|POST|TRASER)\b/i]] as const;
 export const FRENOS = [["disco", "Freno de disco", /\b(DISCO|PASTILLA|PASTILLAS|CALIPER|CALIPE)\b/i], ["tambor", "Freno de tambor", /\b(TAMBOR|BALATA|BALATAS|ZAPATA|ZAPATAS|FORRO|REMACHE)\b/i]] as const;
 
-export type Filtro = { cat?: string; eje?: string; freno?: string; q?: string };
+export type Filtro = { cat?: string; eje?: string; freno?: string; q?: string; orden?: string; stock?: string };
+export const ORDENES: [string, string][] = [["venta", "Más vendidos primero"], ["precio-desc", "Mayor precio"], ["precio-asc", "Menor precio"], ["stock", "Más disponibles"], ["nombre", "Nombre A–Z"], ["codigo", "Código Rivecar"]];
 
 /** Productos que aplican al vehículo, ordenados: primero los que nombran su motor, después por venta. */
-export function productosParaVehiculo(v: Vehiculo, f: Filtro): { items: Product[]; total: number; cats: { cat: string; n: number }[]; porMotor: number } {
+export function productosParaVehiculo(v: Vehiculo, f: Filtro): { items: Product[]; total: number; cats: { cat: string; n: number }[]; porMotor: number; conStock: number } {
   let base = v.slug ? PRODUCTS.filter((p) => p.modelos.includes(v.slug)) : [];
   if (v.motorFam) {
     const conMotor = PRODUCTS.filter((p) => p.om.includes(v.motorFam!) && !base.includes(p));
@@ -109,5 +110,16 @@ export function productosParaVehiculo(v: Vehiculo, f: Filtro): { items: Product[
   if (f.q) { const q = f.q.toUpperCase(); items = items.filter((p) => (p.descripcion + " " + p.codigo + " " + p.refs.join(" ")).toUpperCase().includes(q)); }
   if (f.eje) { const rx = EJES.find((e) => e[0] === f.eje)?.[2]; if (rx) items = items.filter((p) => rx.test(p.descripcion)); }
   if (f.freno) { const rx = FRENOS.find((e) => e[0] === f.freno)?.[2]; if (rx) items = items.filter((p) => rx.test(p.descripcion)); }
-  return { items, total: base.length, cats, porMotor: mf ? base.filter((p) => p.om.includes(mf)).length : 0 };
+  if (f.stock === "1") items = items.filter((p) => stockTotal(p) > 0);
+  const conStockN = items.filter((p) => stockTotal(p) > 0).length;
+  if (f.orden && f.orden !== "venta") {
+    items = [...items];
+    const pr = (p: Product) => p.precio ?? -1;
+    if (f.orden === "precio-desc") items.sort((a, b) => pr(b) - pr(a) || score(a) - score(b));
+    else if (f.orden === "precio-asc") items.sort((a, b) => (pr(a) < 0 ? 1 : 0) - (pr(b) < 0 ? 1 : 0) || pr(a) - pr(b) || score(a) - score(b));
+    else if (f.orden === "stock") items.sort((a, b) => stockTotal(b) - stockTotal(a) || score(a) - score(b));
+    else if (f.orden === "nombre") items.sort((a, b) => a.descripcion.localeCompare(b.descripcion, "es"));
+    else if (f.orden === "codigo") items.sort((a, b) => a.codigo.localeCompare(b.codigo, "es", { numeric: true }));
+  }
+  return { items, total: base.length, cats, porMotor: mf ? base.filter((p) => p.om.includes(mf)).length : 0, conStock: conStockN };
 }
