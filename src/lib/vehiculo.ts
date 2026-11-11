@@ -78,7 +78,9 @@ export function vehiculoPorPatente(input: string): Vehiculo | null {
   const modeloNum = [...new Set((modelo.match(/(?<![A-Z0-9.])[0-9]{3,4}(?![0-9.])/g) || []))];
   // Motor según el número de modelo cuando es inequívoco; si no, los motores de las series conocidas de la familia.
   const porNum = modeloNum.map((n) => MOTOR_POR_MODELO[n]).filter(Boolean) as string[];
-  const motores = porNum.length ? [...new Set(porNum)] : slug ? [...new Set(Object.values(SERIES).filter((s) => s.slug === slug).flatMap((s) => s.motores))] : [];
+  // Sprinter y Vito: el motor depende del año (OM 611/612 hasta 2005, OM 646/651 2006–2009, OM 651 2010–2018, OM 651/654 desde 2019).
+  const porAnio = (slug === "sprinter" || slug === "vito") && anio ? (anio <= 2005 ? ["OM 611", "OM 612"] : anio <= 2009 ? ["OM 646", "OM 651"] : anio <= 2018 ? ["OM 651"] : ["OM 651", "OM 654"]) : [];
+  const motores = porNum.length ? [...new Set(porNum)] : porAnio.length ? porAnio : slug ? [...new Set(Object.values(SERIES).filter((s) => s.slug === slug).flatMap((s) => s.motores))] : [];
   return {
     entrada: input, familia: `${modelo}${m ? ` · familia ${m.nombre}` : ""} (${tipo.toLowerCase()}${anio ? `, ${anio}` : ""})`, slug, anioModelo: anio || undefined,
     motoresProbables: motores, origen: undefined, modeloNum,
@@ -123,7 +125,16 @@ export function productosParaVehiculo(v: Vehiculo, f: Filtro): { items: Product[
   const cats = Object.entries(base.reduce<Record<string, number>>((acc, p) => { acc[p.cat1] = (acc[p.cat1] || 0) + 1; return acc; }, {})).map(([cat, n]) => ({ cat, n })).sort((a, b) => b.n - a.n);
   let items = base;
   if (f.cat) items = items.filter((p) => p.cat1 === f.cat);
-  if (f.q) { const q = f.q.toUpperCase(); items = items.filter((p) => (p.descripcion + " " + p.codigo + " " + p.refs.join(" ")).toUpperCase().includes(q)); }
+  if (f.q) {
+    // Filtro por palabras: cada palabra de 3 letras o más debe aparecer, en cualquier orden ("sensor aceite" encuentra "SENSOR NIVEL ACEITE"). Sin acentos; en números se ignoran puntos y guiones.
+    const norm = (t: string) => t.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const words = norm(f.q).split(/\s+/).filter((w) => w.length >= 3 || /\d/.test(w));
+    items = items.filter((p) => {
+      const hay = norm(p.descripcion + " " + p.codigo + " " + p.refs.join(" ") + " " + p.modelo);
+      const hayNum = hay.replace(/[^0-9A-Z]/g, "");
+      return words.every((w) => hay.includes(w) || (/\d/.test(w) && hayNum.includes(w.replace(/[^0-9A-Z]/g, ""))));
+    });
+  }
   if (f.eje) { const rx = EJES.find((e) => e[0] === f.eje)?.[2]; if (rx) items = items.filter((p) => rx.test(p.descripcion)); }
   if (f.freno) { const rx = FRENOS.find((e) => e[0] === f.freno)?.[2]; if (rx) items = items.filter((p) => rx.test(p.descripcion)); }
   if (f.stock === "1") items = items.filter((p) => stockTotal(p) > 0);
