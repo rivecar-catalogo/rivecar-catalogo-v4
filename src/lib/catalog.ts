@@ -70,7 +70,7 @@ export const STATS = {
 };
 export const INVENTARIO_FECHA = "23-10-2026";
 export const VENTAS_FECHA = "27-10-2026";
-export const VERSION = "v4.2 · 11-11-2026";
+export const VERSION = "v4.3 · 11-11-2026";
 export const SHOW_STOCK = process.env.NEXT_PUBLIC_SHOW_STOCK !== "0";
 export const stockTotal = (p: Product) => Object.values(p.stk || {}).reduce((a, b) => a + b, 0);
 export const SUCURSALES = [

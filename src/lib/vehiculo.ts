@@ -1,4 +1,5 @@
 import data from "@/data/vehiculos.json";
+import patentes from "@/data/patentes.json";
 import { PRODUCTS, MODELOS, popRank, type Product } from "@/lib/catalog";
 
 type Serie = { familia: string; slug: string; origen: string; motores: string[]; confirmado: string; sub?: Record<string, { familia: string; slug: string; motores: string[] }> };
@@ -6,6 +7,7 @@ const SERIES = data.series as Record<string, Serie>;
 const MOTORES = data.motores as Record<string, string>;
 const WMI = data.wmi as Record<string, string>;
 const ANIOS = data.anios as Record<string, number>;
+const PATENTES = patentes as unknown as Record<string, [string, number, string, string]>;
 
 export type Vehiculo = {
   entrada: string;
@@ -61,6 +63,22 @@ export function decodeMotor(input: string): { motor: string; motorFam: string } 
   if (!d) return null;
   return { motor: d, motorFam: "OM " + fam };
 }
+
+/** Busca la patente en el registro público de vehículos Mercedes-Benz inscritos en Chile (1985 a septiembre de 2026). */
+export function vehiculoPorPatente(input: string): Vehiculo | null {
+  const pat = clean(input);
+  const r = PATENTES[pat];
+  if (!r) return null;
+  const [modelo, anio, tipo, slug] = r;
+  const m = MODELOS.find((x) => x.slug === slug);
+  const motores = slug ? [...new Set(Object.values(SERIES).filter((s) => s.slug === slug).flatMap((s) => s.motores))] : [];
+  return {
+    entrada: input, familia: `${modelo}${m ? ` · familia ${m.nombre}` : ""} (${tipo.toLowerCase()}${anio ? `, ${anio}` : ""})`, slug, anioModelo: anio || undefined,
+    motoresProbables: motores, origen: undefined,
+    nota: slug ? "Identificado por la patente en el registro público (modelo y año de fabricación). Para afinar la serie y el motor, agregue el número de chasis o de motor." : "La patente está en el registro, pero el modelo no coincide con ninguna familia del catálogo: elija el modelo a mano.",
+  };
+}
+export const PATENTES_TOTAL = Object.keys(PATENTES).length;
 
 /** Vehículo elegido a mano: modelo del prototipo + año. */
 export function vehiculoPorModelo(slug: string, anio?: number): Vehiculo | null {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import ProductCard from "@/components/ProductCard";
 import { MODELOS } from "@/lib/catalog";
-import { decodeChasis, decodeMotor, vehiculoPorModelo, productosParaVehiculo, EJES, FRENOS, type Vehiculo } from "@/lib/vehiculo";
+import { decodeChasis, decodeMotor, vehiculoPorModelo, vehiculoPorPatente, productosParaVehiculo, PATENTES_TOTAL, EJES, FRENOS, type Vehiculo } from "@/lib/vehiculo";
 
 export const metadata: Metadata = { title: "Buscar por vehículo", description: "Escriba el número de chasis o elija el modelo: el catálogo muestra solo lo que aplica." };
 
@@ -13,6 +13,7 @@ const PAGE = 48;
 export default async function VehiculoPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const chasis = one(sp.chasis).trim();
+  const patente = one(sp.patente).trim();
   const motorIn = one(sp.motor).trim();
   const modelo = one(sp.modelo);
   const anio = parseInt(one(sp.anio)) || undefined;
@@ -22,6 +23,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
   let v: Vehiculo | null = null;
   let error = "";
   if (chasis) { v = decodeChasis(chasis); if (!v) error = "No reconozco ese número de chasis. Revise que tenga 17 caracteres y empiece por 9BM, WDB, W1T, 8AC o similar; si no, elija el modelo a mano."; }
+  else if (patente) { v = vehiculoPorPatente(patente); if (!v) error = `La patente ${patente.toUpperCase()} no está entre los ${PATENTES_TOTAL.toLocaleString("es-CL")} vehículos Mercedes-Benz inscritos en Chile entre 1985 y septiembre de 2026 que conoce el catálogo (o no es Mercedes-Benz). Pruebe con el chasis o elija el modelo a mano.`; }
   else if (modelo) { v = vehiculoPorModelo(modelo, anio); }
   if (v && motorIn) { const m = decodeMotor(motorIn); if (m) { v.motor = m.motor; v.motorFam = m.motorFam; } }
   if (v && !v.motorFam && v.motoresProbables.length === 1) { v.motorFam = v.motoresProbables[0]; }
@@ -32,7 +34,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
   const slice = res ? res.items.slice((cur - 1) * PAGE, cur * PAGE) : [];
   const keep = (over: Record<string, string | undefined>) => {
     const q = new URLSearchParams();
-    const all: Record<string, string | undefined> = { chasis: chasis || undefined, motor: motorIn || undefined, modelo: modelo || undefined, anio: anio ? String(anio) : undefined, cat: f.cat, eje: f.eje, freno: f.freno, q: f.q, ...over };
+    const all: Record<string, string | undefined> = { chasis: chasis || undefined, patente: patente || undefined, motor: motorIn || undefined, modelo: modelo || undefined, anio: anio ? String(anio) : undefined, cat: f.cat, eje: f.eje, freno: f.freno, q: f.q, ...over };
     Object.entries(all).forEach(([k, val]) => { if (val) q.set(k, val); });
     return `/vehiculo?${q.toString()}`;
   };
@@ -42,9 +44,13 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="eyebrow text-red">Buscar por vehículo</div>
       <h1 className="text-2xl md:text-3xl font-extrabold text-navy mt-1">Del camión a la pieza, sin saber el número de parte</h1>
-      <p className="text-muted mt-2 max-w-3xl">Escriba el número de chasis (está en el permiso de circulación y en la placa del chasis) y, si lo tiene, el número de motor. El catálogo identifica la familia, la serie y el motor, y muestra solo lo que aplica. Si no tiene el chasis, elija el modelo.</p>
+      <p className="text-muted mt-2 max-w-3xl">Escriba la patente, o el número de chasis (está en el permiso de circulación y en la placa del chasis) y, si lo tiene, el número de motor. El catálogo identifica la familia, la serie y el motor, y muestra solo lo que aplica. Si no tiene ninguno, elija el modelo.</p>
 
-      <form className="card p-4 mt-6 grid gap-3 md:grid-cols-[1.4fr_1fr_auto]" action="/vehiculo" method="get">
+      <form className="card p-4 mt-6 grid gap-3 md:grid-cols-[0.8fr_1.4fr_1fr_auto]" action="/vehiculo" method="get">
+        <label className="text-sm">
+          <span className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">Patente</span>
+          <input name="patente" defaultValue={patente} placeholder="RKXL39" className="w-full border border-line rounded-md px-3 py-2 mono uppercase" autoComplete="off" maxLength={8} />
+        </label>
         <label className="text-sm">
           <span className="block text-xs font-semibold text-muted uppercase tracking-wider mb-1">N° de chasis (VIN)</span>
           <input name="chasis" defaultValue={chasis} placeholder="9BM958154PB300457" className="w-full border border-line rounded-md px-3 py-2 mono" autoComplete="off" />
@@ -54,7 +60,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
           <input name="motor" defaultValue={motorIn} placeholder="926994U1414359" className="w-full border border-line rounded-md px-3 py-2 mono" autoComplete="off" />
         </label>
         <div className="flex items-end"><button className="btn-red h-11 w-full md:w-auto" type="submit">Identificar</button></div>
-        <details className="md:col-span-3 text-sm">
+        <details className="md:col-span-4 text-sm">
           <summary className="cursor-pointer text-navy font-semibold">No tengo el chasis: elegir el modelo a mano</summary>
           <div className="mt-2 flex flex-wrap gap-2 items-end">
             <label>
@@ -87,7 +93,8 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
               <dt className="text-muted">Motor</dt><dd className="font-semibold">{v.motor || (v.motoresProbables.length ? `Probable: ${v.motoresProbables.join(" o ")}` : "Sin dato")}</dd>
             </dl>
             {v.confirmado && <p className="text-xs text-muted mt-2">Series confirmadas con chasis reales: {v.confirmado}.</p>}
-            {v.nota && <p className="text-xs text-red mt-2">{v.nota}</p>}
+            {v.nota && <p className="text-xs text-muted mt-2">{v.nota}</p>}
+            {patente && <p className="text-xs text-muted mt-2">Patente {patente.toUpperCase()} según el registro público de inscripciones (Registro Civil, 1985 a septiembre de 2026). El registro no trae chasis ni motor.</p>}
             <p className="text-xs text-muted mt-2">La familia y el motor acotan la búsqueda; la pieza exacta se confirma con la referencia Mercedes-Benz de la ficha y, en frenos y ejes, con la posición y el tipo de freno.</p>
           </section>
 
@@ -95,7 +102,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-xl font-extrabold text-navy">{res.total.toLocaleString("es-CL")} productos para este vehículo{res.porMotor ? <span className="text-sm text-muted font-normal"> · {res.porMotor} nombran su motor y van primero</span> : null}</h2>
               <form action="/vehiculo" method="get" className="flex gap-2">
-                {chasis && <input type="hidden" name="chasis" value={chasis} />}{motorIn && <input type="hidden" name="motor" value={motorIn} />}{modelo && <input type="hidden" name="modelo" value={modelo} />}{anio && <input type="hidden" name="anio" value={anio} />}{f.cat && <input type="hidden" name="cat" value={f.cat} />}
+                {chasis && <input type="hidden" name="chasis" value={chasis} />}{patente && <input type="hidden" name="patente" value={patente} />}{motorIn && <input type="hidden" name="motor" value={motorIn} />}{modelo && <input type="hidden" name="modelo" value={modelo} />}{anio && <input type="hidden" name="anio" value={anio} />}{f.cat && <input type="hidden" name="cat" value={f.cat} />}
                 <input name="q" defaultValue={f.q} placeholder="Filtrar: pastilla, filtro, correa…" className="border border-line rounded-md px-3 py-1.5 text-sm" />
                 <button className="btn-ghost text-sm" type="submit">Filtrar</button>
               </form>
@@ -129,7 +136,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
 
       {!v && !error && (
         <section className="mt-8 grid gap-4 md:grid-cols-3 text-sm">
-          <div className="card p-4"><div className="font-bold text-navy">1 · Pida el chasis</div><p className="text-muted mt-1">Está en el permiso de circulación («N° chasis» o VIN, 17 caracteres) y en la placa del chasis. También sirve la patente consultada en el Registro Civil, que entrega chasis y motor.</p></div>
+          <div className="card p-4"><div className="font-bold text-navy">1 · Pida la patente o el chasis</div><p className="text-muted mt-1">Con la patente, el catálogo busca el modelo y el año en el registro público de vehículos Mercedes-Benz inscritos en Chile (1985 a 2026). Con el chasis (permiso de circulación, 17 caracteres) afina la serie y el motor.</p></div>
           <div className="card p-4"><div className="font-bold text-navy">2 · El catálogo lo identifica</div><p className="text-muted mt-1">De los dígitos 4 a 9 sale la serie Mercedes-Benz (por ejemplo 958.154 = Atego Brasil); de la letra 10, el año modelo; del número de motor, el motor exacto.</p></div>
           <div className="card p-4"><div className="font-bold text-navy">3 · Elija la categoría y cierre</div><p className="text-muted mt-1">Frenos, motor, suspensión… y dos preguntas que cualquiera puede responder mirando el camión: ¿eje delantero o trasero? ¿disco o tambor?</p></div>
         </section>
