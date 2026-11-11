@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProduct, validacion, related, MODELOS, clp, SHOW_PRICES, SUCURSALES, INVENTARIO_FECHA, SHOW_STOCK, stockTotal } from "@/lib/catalog";
+import { getProduct, validacion, related, companions, conStock, MODELOS, clp, SHOW_PRICES, SUCURSALES, INVENTARIO_FECHA, VENTAS_FECHA, SHOW_STOCK, stockTotal } from "@/lib/catalog";
 import ProductCard from "@/components/ProductCard";
 import QuoteButton from "@/components/QuoteButton";
 import Img from "@/components/Img";
@@ -23,6 +23,10 @@ export default async function ProductoPage({ params }: Props) {
   const rel = related(p);
   const modelos = MODELOS.filter((m) => p.modelos.includes(m.slug));
   const val = validacion(p.codigo);
+  const comp = companions(p);
+  const stockBy = conStock(p);
+  const faltan = SUCURSALES.map((s) => s.nombre.split(" · ")[0]).filter((n) => !(p.stk?.[n] > 0));
+  const semColor = p.sem == null ? "" : p.sem < 12 ? "text-red" : p.sem < 26 ? "text-amber-700" : "text-green-700";
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <nav className="text-xs text-muted mb-4 flex flex-wrap gap-1">
@@ -79,6 +83,14 @@ export default async function ProductoPage({ params }: Props) {
               ); })}
             </ul>
             <p className="text-xs text-muted mt-2">Disponibilidad según inventario al {INVENTARIO_FECHA}; se confirma al cotizar o comprar. Retiro en sucursal o despacho a todo Chile.</p>
+            {SHOW_STOCK && (p.vm || 0) > 0 ? (
+              <div className="mt-3 rounded-md border border-line bg-white px-3 py-2 text-sm">
+                <div className="eyebrow text-muted">Ritmo de venta</div>
+                <p className="mt-1"><span className="font-semibold text-navy">Se venden {p.vm! < 1 ? "menos de 1" : Math.round(p.vm!).toLocaleString("es-CL")} por mes</span>{p.sem != null ? <> · con el stock actual alcanza <span className={`font-semibold ${semColor}`}>{p.sem >= 104 ? "más de 2 años" : p.sem >= 52 ? "más de 1 año" : `${p.sem} semanas`}</span></> : null}</p>
+                {stockBy.length > 0 && faltan.length > 0 ? <p className="text-xs text-muted mt-1">Si falta en {faltan.length === 1 ? faltan[0] : "una sucursal"}, se traspasa desde {stockBy[0][0]} ({stockBy[0][1].toLocaleString("es-CL")} u.){stockBy[1] ? ` o ${stockBy[1][0]} (${stockBy[1][1].toLocaleString("es-CL")} u.)` : ""}.</p> : null}
+                <p className="text-[11px] text-muted mt-1">Ventas de los últimos 12 meses al {VENTAS_FECHA}, de las facturas de Rivecar.</p>
+              </div>
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-3 items-center">
               <a className="btn-red h-11" href={`${p.sivo}?utm_source=catalogo&utm_medium=ficha&utm_campaign=prototipo`} target="_blank" rel="noopener">Comprar en la tienda Rivecar</a>
               <QuoteButton codigo={p.codigo} descripcion={p.descripcion} oem={p.refMB[0] || p.refs[0] || ""} />
@@ -86,6 +98,20 @@ export default async function ProductoPage({ params }: Props) {
           </div>
         </div>
       </div>
+      {comp.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-xl font-extrabold text-navy mb-1">Con esto también llevan</h2>
+          <p className="text-sm text-muted mb-4">Lo que suele ir en la misma factura que este producto, según las ventas de Rivecar de 2025 y 2026.</p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {comp.map(({ q, pct }) => (
+              <div key={q.codigo} className="relative">
+                <span className="absolute z-10 top-2 left-2 text-[11px] font-bold text-white bg-navy rounded px-1.5 py-0.5">En {pct} % de las facturas</span>
+                <ProductCard p={q} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {rel.length > 0 && (
         <section className="mt-12">
           <h2 className="text-xl font-extrabold text-navy mb-4">Relacionados en {(p.cat2 || p.cat1).toLowerCase()}</h2>

@@ -11,6 +11,10 @@ export type Product = {
   anio?: string; revisar?: string; imgHist?: string;
   /** Importancia por ventas de los últimos 12 meses (A = 80 % de la venta, B = siguiente 15 %, C = resto). Sin cantidades. */
   pop?: string;
+  /** Ritmo de venta: unidades por mes (últimos 12 meses) y semanas que alcanza el stock actual a ese ritmo. */
+  vm?: number; sem?: number | null;
+  /** Con esto también llevan: [código, % de las facturas de este producto que incluyen al otro]. Calculado de las facturas 2025–2026. */
+  co?: [string, number][];
 };
 export type Sub = { slug: string; nombre: string; n: number };
 export type Categoria = { slug: string; nombre: string; n: number; sub: Sub[] };
@@ -46,6 +50,14 @@ export function related(p: Product, limit = 8): Product[] {
   const pool = shared.length >= limit ? shared : [...shared, ...same.filter((q) => !shared.includes(q))];
   return pool.slice(0, limit);
 }
+/** Productos que suelen ir en la misma factura, con el % de facturas en que acompañan a p. */
+export function companions(p: Product): { q: Product; pct: number }[] {
+  return (p.co || []).map(([c, pct]) => ({ q: byCodigo.get(c), pct })).filter((x): x is { q: Product; pct: number } => !!x.q);
+}
+/** Sucursales con stock del producto, de mayor a menor, para sugerir un traspaso. */
+export function conStock(p: Product): [string, number][] {
+  return Object.entries(p.stk || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+}
 export function clp(n: number | null) {
   return n == null ? "" : "$" + n.toLocaleString("es-CL");
 }
@@ -58,7 +70,7 @@ export const STATS = {
 };
 export const INVENTARIO_FECHA = "23-10-2026";
 export const VENTAS_FECHA = "27-10-2026";
-export const VERSION = "v4 · 28-10-2026";
+export const VERSION = "v4.1 · 11-11-2026";
 export const SHOW_STOCK = process.env.NEXT_PUBLIC_SHOW_STOCK !== "0";
 export const stockTotal = (p: Product) => Object.values(p.stk || {}).reduce((a, b) => a + b, 0);
 export const SUCURSALES = [
