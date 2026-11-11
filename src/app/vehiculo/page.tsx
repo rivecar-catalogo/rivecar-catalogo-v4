@@ -26,7 +26,7 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
   else if (patente) { v = vehiculoPorPatente(patente); if (!v) error = `La patente ${patente.toUpperCase()} no está entre los ${PATENTES_TOTAL.toLocaleString("es-CL")} vehículos Mercedes-Benz inscritos en Chile entre 1985 y septiembre de 2026 que conoce el catálogo (o no es Mercedes-Benz). Pruebe con el chasis o elija el modelo a mano.`; }
   else if (modelo) { v = vehiculoPorModelo(modelo, anio); }
   if (v && motorIn) { const m = decodeMotor(motorIn); if (m) { v.motor = m.motor; v.motorFam = m.motorFam; } }
-  if (v && !v.motorFam && v.motoresProbables.length === 1) { v.motorFam = v.motoresProbables[0]; }
+  if (v && !v.motorFam && v.motoresProbables.length === 1 && (v.chasis || v.modeloNum?.length)) { v.motorFam = v.motoresProbables[0]; }
 
   const res = v ? productosParaVehiculo(v, f) : null;
   const pages = res ? Math.max(1, Math.ceil(res.items.length / PAGE)) : 1;
@@ -94,13 +94,14 @@ export default async function VehiculoPage({ searchParams }: { searchParams: Pro
             </dl>
             {v.confirmado && <p className="text-xs text-muted mt-2">Series confirmadas con chasis reales: {v.confirmado}.</p>}
             {v.nota && <p className="text-xs text-muted mt-2">{v.nota}</p>}
+            {patente && v.modeloNum && v.modeloNum.length > 0 && <p className="text-xs text-muted mt-2">Además de la familia, se incluyen los productos cuya aplicación nombra el modelo {v.modeloNum.join(" o ")} (por ejemplo «814/914»), aunque estén clasificados en otra familia del catálogo.</p>}
             {patente && <p className="text-xs text-muted mt-2">Patente {patente.toUpperCase()} según el registro público de inscripciones (Registro Civil, 1985 a septiembre de 2026). El registro no trae chasis ni motor.</p>}
             <p className="text-xs text-muted mt-2">La familia y el motor acotan la búsqueda; la pieza exacta se confirma con la referencia Mercedes-Benz de la ficha y, en frenos y ejes, con la posición y el tipo de freno.</p>
           </section>
 
           <section className="mt-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-xl font-extrabold text-navy">{res.total.toLocaleString("es-CL")} productos para este vehículo{res.porMotor ? <span className="text-sm text-muted font-normal"> · {res.porMotor} nombran su motor y van primero</span> : null}</h2>
+              <h2 className="text-xl font-extrabold text-navy">{res.total.toLocaleString("es-CL")} productos para este vehículo{res.porMotor || res.porModelo ? <span className="text-sm text-muted font-normal"> · {[res.porMotor ? `${res.porMotor} nombran su motor` : "", res.porModelo ? `${res.porModelo.toLocaleString("es-CL")} nombran el modelo ${res.modeloNum.join("/")}` : ""].filter(Boolean).join(" y ")}: van primero</span> : null}</h2>
               <form action="/vehiculo" method="get" className="flex flex-wrap gap-2 items-center">
                 {chasis && <input type="hidden" name="chasis" value={chasis} />}{patente && <input type="hidden" name="patente" value={patente} />}{motorIn && <input type="hidden" name="motor" value={motorIn} />}{modelo && <input type="hidden" name="modelo" value={modelo} />}{anio && <input type="hidden" name="anio" value={anio} />}{f.cat && <input type="hidden" name="cat" value={f.cat} />}{f.eje && <input type="hidden" name="eje" value={f.eje} />}{f.freno && <input type="hidden" name="freno" value={f.freno} />}
                 <input name="q" defaultValue={f.q} placeholder="Filtrar: pastilla, filtro, correa…" className="border border-line rounded-md px-3 py-1.5 text-sm" />

@@ -23,8 +23,12 @@ export type Vehiculo = {
   motoresProbables: string[];
   confirmado?: string;
   nota?: string;
+  /** Números de modelo que trae el registro ("914", "1836"): sirven para encontrar productos que nombran el modelo aunque la familia no coincida. */
+  modeloNum?: string[];
 };
 
+/** Motor por número de modelo del registro, solo los inequívocos. El resto se infiere de las series de la familia. */
+const MOTOR_POR_MODELO: Record<string, string> = { "914": "OM 904", "915": "OM 904", "916": "OM 924", "710": "OM 904", "711": "OM 904", "712": "OM 904", "1016": "OM 924", "1719": "OM 924" };
 const clean = (s: string) => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 
 /** Decodifica un número de chasis Mercedes-Benz (17 caracteres) a familia, serie, origen y año modelo. */
@@ -71,10 +75,13 @@ export function vehiculoPorPatente(input: string): Vehiculo | null {
   if (!r) return null;
   const [modelo, anio, tipo, slug] = r;
   const m = MODELOS.find((x) => x.slug === slug);
-  const motores = slug ? [...new Set(Object.values(SERIES).filter((s) => s.slug === slug).flatMap((s) => s.motores))] : [];
+  const modeloNum = [...new Set((modelo.match(/(?<![A-Z0-9.])[0-9]{3,4}(?![0-9.])/g) || []))];
+  // Motor según el número de modelo cuando es inequívoco; si no, los motores de las series conocidas de la familia.
+  const porNum = modeloNum.map((n) => MOTOR_POR_MODELO[n]).filter(Boolean) as string[];
+  const motores = porNum.length ? [...new Set(porNum)] : slug ? [...new Set(Object.values(SERIES).filter((s) => s.slug === slug).flatMap((s) => s.motores))] : [];
   return {
     entrada: input, familia: `${modelo}${m ? ` · familia ${m.nombre}` : ""} (${tipo.toLowerCase()}${anio ? `, ${anio}` : ""})`, slug, anioModelo: anio || undefined,
-    motoresProbables: motores, origen: undefined,
+    motoresProbables: motores, origen: undefined, modeloNum,
     nota: slug ? "Identificado por la patente en el registro público (modelo y año de fabricación). Para afinar la serie y el motor, agregue el número de chasis o de motor." : "La patente está en el registro, pero el modelo no coincide con ninguna familia del catálogo: elija el modelo a mano.",
   };
 }
@@ -95,14 +102,23 @@ export type Filtro = { cat?: string; eje?: string; freno?: string; q?: string; o
 export { ORDENES } from "@/lib/catalog";
 
 /** Productos que aplican al vehículo, ordenados: primero los que nombran su motor, después por venta. */
-export function productosParaVehiculo(v: Vehiculo, f: Filtro): { items: Product[]; total: number; cats: { cat: string; n: number }[]; porMotor: number; conStock: number } {
+export function productosParaVehiculo(v: Vehiculo, f: Filtro): { items: Product[]; total: number; cats: { cat: string; n: number }[]; porMotor: number; conStock: number; porModelo: number; modeloNum: string[] } {
   let base = v.slug ? PRODUCTS.filter((p) => p.modelos.includes(v.slug)) : [];
+  // Productos que nombran el número de modelo del registro ("814/914", "1836/0500RS") aunque su familia sea otra: el mesón los conoce así.
+  const nums = (v.modeloNum || []).filter((n) => n.length >= 3);
+  const rxNum = nums.length ? new RegExp(`(?<![0-9.])(${nums.join("|")})(?![0-9])`) : null;
+  const porModeloSet = new Set<string>();
+  if (rxNum) {
+    for (const p of PRODUCTS) if (rxNum.test(p.modelo + " " + (p.aplicacionOld || ""))) porModeloSet.add(p.codigo);
+    const extra = PRODUCTS.filter((p) => porModeloSet.has(p.codigo) && !base.includes(p));
+    base = [...base, ...extra];
+  }
   if (v.motorFam) {
     const conMotor = PRODUCTS.filter((p) => p.om.includes(v.motorFam!) && !base.includes(p));
     base = [...base, ...conMotor];
   }
   const mf = v.motorFam;
-  const score = (p: Product) => (mf && p.om.includes(mf) ? 0 : 1) * 10 + popRank(p);
+  const score = (p: Product) => (mf && p.om.includes(mf) ? 0 : porModeloSet.has(p.codigo) ? 1 : 2) * 10 + popRank(p);
   base.sort((a, b) => score(a) - score(b));
   const cats = Object.entries(base.reduce<Record<string, number>>((acc, p) => { acc[p.cat1] = (acc[p.cat1] || 0) + 1; return acc; }, {})).map(([cat, n]) => ({ cat, n })).sort((a, b) => b.n - a.n);
   let items = base;
@@ -113,5 +129,5 @@ export function productosParaVehiculo(v: Vehiculo, f: Filtro): { items: Product[
   if (f.stock === "1") items = items.filter((p) => stockTotal(p) > 0);
   const conStockN = items.filter((p) => stockTotal(p) > 0).length;
   items = ordenar(items, f.orden);
-  return { items, total: base.length, cats, porMotor: mf ? base.filter((p) => p.om.includes(mf)).length : 0, conStock: conStockN };
+  return { items, total: base.length, cats, porMotor: mf ? base.filter((p) => p.om.includes(mf)).length : 0, conStock: conStockN, porModelo: porModeloSet.size, modeloNum: nums };
 }
