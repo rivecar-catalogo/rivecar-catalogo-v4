@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProduct, validacion, related, companions, conStock, MODELOS, clp, SHOW_PRICES, SUCURSALES, INVENTARIO_FECHA, VENTAS_FECHA, SHOW_STOCK, stockTotal } from "@/lib/catalog";
+import { getProduct, validacion, related, companions, conStock, MODELOS, OTRAS, clp, SHOW_PRICES, SUCURSALES, INVENTARIO_FECHA, VENTAS_FECHA, SHOW_STOCK, stockTotal } from "@/lib/catalog";
 import ProductCard from "@/components/ProductCard";
 import QuoteButton from "@/components/QuoteButton";
 import Img from "@/components/Img";
@@ -59,6 +59,7 @@ export default async function ProductoPage({ params }: Props) {
             {p.refAlt.length > 0 && (<><dt className="text-muted">Código del fabricante / alternativo</dt><dd className="mono">{p.refAlt.join(" · ")}</dd></>)}
             {p.om.length > 0 && (<><dt className="text-muted">Motor</dt><dd className="flex flex-wrap gap-2">{p.om.map((o) => <Link key={o} href={`/buscar?q=${encodeURIComponent(o)}`} className="chip">{o}</Link>)}</dd></>)}
             {p.modelo && (<><dt className="text-muted">Modelo / aplicación</dt><dd>{p.modelo}</dd></>)}
+            {p.otras && p.otras.length > 0 && (<><dt className="text-muted">También aplica a</dt><dd>{p.otras.map((o, i) => { const m = OTRAS.find((x) => x.slug === o); return <span key={o}>{i > 0 ? " · " : ""}<Link className="underline text-navy" href={`/otras-marcas/${o}`}>{m ? m.nombre : o}</Link></span>; })}</dd></>)}
             {p.anio && (<><dt className="text-muted">Año</dt><dd>{p.anio}</dd></>)}
             {!p.modelo && p.aplicacionOld && (<><dt className="text-muted">Aplicación (catálogo histórico)</dt><dd>{p.aplicacionOld}</dd></>)}
           </dl>

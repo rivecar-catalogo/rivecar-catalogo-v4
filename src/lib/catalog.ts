@@ -1,6 +1,7 @@
 import products from "@/data/products.json";
 import categorias from "@/data/categorias.json";
 import modelos from "@/data/modelos.json";
+import otras from "@/data/otras.json";
 import validaciones from "@/data/validaciones.json";
 
 export type Product = {
@@ -8,6 +9,8 @@ export type Product = {
   cat1: string; cat1Slug: string; cat2: string; cat2Slug: string; marca: string;
   refs: string[]; refMB: string[]; refAlt: string[]; om: string[]; img: string | null; imgLocal: boolean; precio: number | null; disp: string[]; stk: Record<string, number>; gallery?: string[];
   modelos: string[]; sivo: string; aplicacionOld: string;
+  /** Otras marcas de vehículo que nombra la aplicación de Rivecar (slugs de OTRAS). */
+  otras: string[];
   anio?: string; revisar?: string; imgHist?: string;
   /** Importancia por ventas de los últimos 12 meses (A = 80 % de la venta, B = siguiente 15 %, C = resto). Sin cantidades. */
   pop?: string;
@@ -23,6 +26,7 @@ export type Modelo = { slug: string; nombre: string; n: number };
 export const PRODUCTS = products as Product[];
 export const CATEGORIAS = categorias as Categoria[];
 export const MODELOS = modelos as Modelo[];
+export const OTRAS = otras as Modelo[];
 export const SHOW_PRICES = process.env.NEXT_PUBLIC_SHOW_PRICES !== "0";
 export const TIENDA = process.env.NEXT_PUBLIC_TIENDA_URL || "https://rivecar.sivo.cl";
 
@@ -44,6 +48,8 @@ export function productsByCat(slug: string, sub?: string) {
   return PRODUCTS.filter((p) => p.cat1Slug === slug && (!sub || p.cat2Slug === sub)).sort(byPop);
 }
 export function productsByModelo(slug: string) { return PRODUCTS.filter((p) => p.modelos.includes(slug)).sort(byPop); }
+export function productsByOtra(slug: string) { return PRODUCTS.filter((p) => (p.otras || []).includes(slug)).sort(byPop); }
+export function getOtra(slug: string) { return OTRAS.find((m) => m.slug === slug); }
 export function related(p: Product, limit = 8): Product[] {
   const same = PRODUCTS.filter((q) => q.codigo !== p.codigo && q.cat2Slug === p.cat2Slug && q.cat1Slug === p.cat1Slug);
   const shared = same.filter((q) => q.modelos.some((m) => p.modelos.includes(m)));
@@ -70,7 +76,7 @@ export const STATS = {
 };
 export const INVENTARIO_FECHA = "23-10-2026";
 export const VENTAS_FECHA = "27-10-2026";
-export const VERSION = "v4.3.2 · 11-11-2026";
+export const VERSION = "v4.4 · 12-11-2026";
 export const SHOW_STOCK = process.env.NEXT_PUBLIC_SHOW_STOCK !== "0";
 export const stockTotal = (p: Product) => Object.values(p.stk || {}).reduce((a, b) => a + b, 0);
 /** Órdenes disponibles en todas las listas (por vehículo, categorías, modelos, buscador). */
